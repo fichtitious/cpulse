@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pulse/error.h>
+#include <pulse/simple.h>
+#include <aubio/aubio.h>
+#include <aubio/beattracking.h>
+
+const unsigned int NUM_AUDIO_FRAMES = 1024;
+const unsigned int NUM_CHANNELS = 2;
+const unsigned int SAMPLE_RATE = 44100;
+
+pa_simple *_pulseAudio;
+int _pulseAudioError;
+int _sampleSize;
+
+aubio_beattracking_t *_aubioTracker;
+fvec_t *_aubioInput;
+fvec_t *_aubioOutput;
+
+void _getDefaultSink(char *deviceName) {
+
+    FILE* pipe = popen("pacmd list-sinks | grep state", "r");
+
+    char buffer[128];
+    int idx = 0;
+    int deviceIdx = -1;
+    while (!feof(pipe)) {
+        if (fgets(buffer, 128, pipe) != NULL) {
+            if (strstr(buffer, "RUNNING")) {
+                deviceIdx = idx;
+                break;
+            } else {
+                idx++;
+            }
+        }
+    }
+
+    pclose(pipe);
+
+    if (deviceIdx == -1) {
+        printf("could not find default sink device (ran pacmd list-sinks)\n");
+        exit(1);
+    } else {
+        sprintf(deviceName, "%i", deviceIdx);
+        printf("found default sink device '%s'... ", &deviceName[0]);
+    }
+
+}
+
+void start() {
+
+    _aubioTracker = new_aubio_beattracking(NUM_AUDIO_FRAMES, NUM_CHANNELS);
+    _aubioInput = new_fvec(NUM_AUDIO_FRAMES, NUM_CHANNELS);
+    _aubioOutput =  new_fvec(NUM_AUDIO_FRAMES, NUM_CHANNELS);
+    _sampleSize = sizeof(*fvec_get_data(_aubioInput)) * NUM_AUDIO_FRAMES / 2;
+
+    const pa_sample_spec samplingType = {PA_SAMPLE_FLOAT32LE, SAMPLE_RATE, NUM_CHANNELS};
+
+    char deviceName[1];
+    _getDefaultSink(deviceName);
+    const char *hwSource = &deviceName[0];
+    printf("connecting to pulseaudio... ");
+
+    if (!(_pulseAudio = pa_simple_new( NULL, "cpulsepulse", PA_STREAM_RECORD, hwSource, "cpulsepulse", 
+                                      &samplingType, NULL, NULL, &_pulseAudioError ))) {
+        printf("couldn't connect to pulseaudio: %s\n", pa_strerror(_pulseAudioError));
+        exit(1);      
+    }
+
+    printf("connected!\n");
+
+}
+
+void stop() {
+
+    pa_simple_free(_pulseAudio);
+    del_fvec(_aubioInput);
+    del_fvec(_aubioOutput);
+    del_aubio_beattracking(_aubioTracker);
+    printf("closed pulseaudio connection\n");
+
+}
+
+float * pulse() {
+
+    if (pa_simple_read( _pulseAudio, *fvec_get_data(_aubioInput), _sampleSize, &_pulseAudioError ) < 0) {
+        printf("read error: %s\n", pa_strerror(_pulseAudioError));
+    } else {
+        aubio_beattracking_do( _aubioTracker, _aubioInput, _aubioOutput );
+    }
+
+    return *fvec_get_data(_aubioOutput);
+
+}
