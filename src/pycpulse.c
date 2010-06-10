@@ -1,5 +1,5 @@
 #include <python2.6/Python.h>
-#include "../include/cpulse.h"
+#include "cpulse.h"
 
 float *_pulses;
 
