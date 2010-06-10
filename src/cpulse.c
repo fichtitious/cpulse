@@ -48,7 +48,7 @@ void _getDefaultSink(char *deviceName) {
 
 }
 
-void start() {
+void cpulse_start() {
 
     _aubioTracker = new_aubio_beattracking(NUM_AUDIO_FRAMES, NUM_CHANNELS);
     _aubioInput = new_fvec(NUM_AUDIO_FRAMES, NUM_CHANNELS);
@@ -72,7 +72,7 @@ void start() {
 
 }
 
-void stop() {
+void cpulse_stop() {
 
     pa_simple_free(_pulseAudio);
     del_fvec(_aubioInput);
@@ -82,7 +82,7 @@ void stop() {
 
 }
 
-float * pulse() {
+float * cpulse_pulse() {
 
     if (pa_simple_read( _pulseAudio, *fvec_get_data(_aubioInput), _sampleSize, &_pulseAudioError ) < 0) {
         printf("cpulse error reading from pulseaudio: %s\n", pa_strerror(_pulseAudioError));
