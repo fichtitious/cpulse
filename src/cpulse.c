@@ -7,8 +7,8 @@
 #include <aubio/beattracking.h>
 
 const unsigned int NUM_AUDIO_FRAMES = 1024;
-const unsigned int NUM_CHANNELS = 2;
-const unsigned int SAMPLE_RATE = 44100;
+const uint8_t NUM_CHANNELS = 2;
+const uint32_t SAMPLE_RATE = 44100;
 
 pa_simple *_pulseAudio;
 int _pulseAudioError;
@@ -39,7 +39,7 @@ void _getDefaultSink(char *deviceName) {
     pclose(pipe);
 
     if (deviceIdx == -1) {
-        printf("could not find default sink device (ran pacmd list-sinks)\n");
+        printf("cpulse could not find default sink device (ran pacmd list-sinks)\n");
         exit(1);
     } else {
         sprintf(deviceName, "%i", deviceIdx);
@@ -52,7 +52,7 @@ void start() {
 
     _aubioTracker = new_aubio_beattracking(NUM_AUDIO_FRAMES, NUM_CHANNELS);
     _aubioInput = new_fvec(NUM_AUDIO_FRAMES, NUM_CHANNELS);
-    _aubioOutput =  new_fvec(NUM_AUDIO_FRAMES, NUM_CHANNELS);
+    _aubioOutput =  new_fvec(NUM_AUDIO_FRAMES / 4, NUM_CHANNELS);
     _sampleSize = sizeof(*fvec_get_data(_aubioInput)) * NUM_AUDIO_FRAMES / 2;
 
     const pa_sample_spec samplingType = {PA_SAMPLE_FLOAT32LE, SAMPLE_RATE, NUM_CHANNELS};
@@ -60,11 +60,11 @@ void start() {
     char deviceName[1];
     _getDefaultSink(deviceName);
     const char *hwSource = &deviceName[0];
-    printf("connecting to pulseaudio... ");
+    printf("cpulse connecting to pulseaudio... ");
 
-    if (!(_pulseAudio = pa_simple_new( NULL, "cpulsepulse", PA_STREAM_RECORD, hwSource, "cpulsepulse", 
+    if (!(_pulseAudio = pa_simple_new( NULL, "cpulse", PA_STREAM_RECORD, hwSource, "cpulse",
                                       &samplingType, NULL, NULL, &_pulseAudioError ))) {
-        printf("couldn't connect to pulseaudio: %s\n", pa_strerror(_pulseAudioError));
+        printf("cpulse couldn't connect to pulseaudio: %s\n", pa_strerror(_pulseAudioError));
         exit(1);      
     }
 
@@ -78,14 +78,14 @@ void stop() {
     del_fvec(_aubioInput);
     del_fvec(_aubioOutput);
     del_aubio_beattracking(_aubioTracker);
-    printf("closed pulseaudio connection\n");
+    printf("cpulse closed pulseaudio connection\n");
 
 }
 
 float * pulse() {
 
     if (pa_simple_read( _pulseAudio, *fvec_get_data(_aubioInput), _sampleSize, &_pulseAudioError ) < 0) {
-        printf("read error: %s\n", pa_strerror(_pulseAudioError));
+        printf("cpulse error reading from pulseaudio: %s\n", pa_strerror(_pulseAudioError));
     } else {
         aubio_beattracking_do( _aubioTracker, _aubioInput, _aubioOutput );
     }
