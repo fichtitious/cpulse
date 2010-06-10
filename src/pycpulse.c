@@ -1,19 +1,11 @@
 #include <python2.6/Python.h>
 #include "../include/cpulse.h"
 
-char _started = 0;
 float *_pulses;
 
 static PyObject * pulse(PyObject *self, PyObject *args) {
-
-    if (!_started) {
-        cpulse_start();
-        _started = 1;
-    }
-
     _pulses = cpulse_pulse();
     return Py_BuildValue("f", _pulses[0]);
-
 }
 
 static PyMethodDef CPulseMethods[] = {
@@ -23,5 +15,6 @@ static PyMethodDef CPulseMethods[] = {
 
 PyMODINIT_FUNC initcpulse(void) {
     (void) Py_InitModule("cpulse", CPulseMethods);
+    cpulse_start();
     Py_AtExit(&cpulse_stop);
 }
