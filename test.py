@@ -2,5 +2,5 @@ import cpulse
 
 if __name__ == "__main__":
 
-    for i in xrange(100):
+    while 1:
         print cpulse.pulse()
