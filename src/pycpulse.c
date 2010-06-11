@@ -5,7 +5,7 @@ float *_pulses;
 
 static PyObject * pulse(PyObject *self, PyObject *args) {
     _pulses = cpulse_pulse();
-    return Py_BuildValue("f", _pulses[0]);
+    return Py_BuildValue("i", (int) _pulses[0] - 2);
 }
 
 static PyMethodDef CPulseMethods[] = {

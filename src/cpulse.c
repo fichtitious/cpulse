@@ -78,7 +78,7 @@ void cpulse_stop() {
     del_fvec(_aubioInput);
     del_fvec(_aubioOutput);
     del_aubio_beattracking(_aubioTracker);
-    printf("cpulse closed pulseaudio connection\n");
+    printf("cpulse successfully closed its pulseaudio connection\n");
 
 }
 
