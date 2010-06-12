@@ -6,5 +6,5 @@ if __name__ == "__main__":
           version = "1.0",
           description = "pulseaudio beat detector with aubio",
           ext_modules = [Extension("cpulse",
-                                   sources = ["src/cpulse.c", "src/pycpulse.c"], 
+                                   sources = ["src/peakdetector.c", "src/cpulse.c", "src/pycpulse.c"],
                                    libraries = ["pulse-simple", "aubio"])])

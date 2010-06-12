@@ -10,11 +10,8 @@
 #include <python2.6/Python.h>
 #include "cpulse.h"
 
-float *_beats;
-
 static PyObject * pulse(PyObject *self, PyObject *args) {
-    _beats = cpulse_beats();
-    return Py_BuildValue("i", (int) _beats[0] - 2);
+    return Py_BuildValue("i", *cpulse_pulse());
 }
 
 static PyMethodDef CPulseMethods[] = {
