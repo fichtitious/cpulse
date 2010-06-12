@@ -64,7 +64,7 @@ void _getRunningSink(char *sinkIndex) {
 }
 
 // Starts up cpulse.
-void cpulse_start() {
+void cpulse_start(void) {
 
     // find the running pulseaudio sink
     char sinkIndex[1];
@@ -92,7 +92,7 @@ void cpulse_start() {
 
 // Reads the latest audio data from pulseaudio, pulls it through
 // the aubio beat tracker, and returns a pointer to the output.
-float * cpulse_beats() {
+float * cpulse_beats(void) {
 
     if (pa_simple_read( _pulseAudioClient, *fvec_get_data(_aubioInput), _sampleSize, &_pulseAudioError ) < 0) {
         printf("cpulse error reading from pulseaudio: %s\n", pa_strerror(_pulseAudioError));
@@ -105,7 +105,7 @@ float * cpulse_beats() {
 }
 
 // Cleans up.
-void cpulse_stop() {
+void cpulse_stop(void) {
 
     pa_simple_free(_pulseAudioClient);
     del_fvec(_aubioInput);

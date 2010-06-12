@@ -1,3 +1,3 @@
-void cpulse_start();
-float * cpulse_beats();
-void cpulse_stop();
+void cpulse_start(void);
+float * cpulse_beats(void);
+void cpulse_stop(void);
