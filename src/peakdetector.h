@@ -8,9 +8,10 @@ typedef struct {
     T *buffer;
     int bufferLength;
     int pushIdx;
-    int isPeak;
+    T peakness;
+    double normalizer;
 } peakdetector_t;
 
 peakdetector_t * new_peakdetector(int bufferLength);
-int * peakdetector_peak(peakdetector_t *pd, T latest);
+float * peakdetector_peak(peakdetector_t *pd, T latest);
 void del_peakdetector(peakdetector_t *pd);
