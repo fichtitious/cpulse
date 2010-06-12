@@ -1,14 +1,10 @@
 /*
   Finds your pulseaudio output device, gets a read-mode connection to it,
   to read all the audio data that's going out through your speakers, from
-  whatever source, and pulls the data through the aubio beat tracker.
+  whatever source, and does beat detection on it.
 
   cpulse_pulse() gets the latest data from pulseaudio and returns a pointer
-  to a flag indicating whether there was a peak in aubio's output, whose
-  nature is not at all well documented, but best understood by reading
-  aubio_beattracking_do() here:
-
-    http://dev.aubio.org/browser/src/tempo/beattracking.c
+  to a flag indicating whether there's a beat in the latest sample.
 
   There is no threading here.  You simply call cpulse_pulse() continuously
   to get continuous beat tracking.
@@ -19,9 +15,10 @@
 #include <string.h>
 #include <pulse/error.h>
 #include <pulse/simple.h>
-#include <aubio/aubio.h>
-#include <aubio/beattracking.h>
 #include "peakdetector.h"
+
+#define PULSEAUDIO_SAMPLE_TYPE float
+#define PULSEAUDIO_SAMPLE_TYPE_CODE PA_SAMPLE_FLOAT32LE
 
 const unsigned int NUM_AUDIO_FRAMES = 1024;
 const uint8_t NUM_CHANNELS = 2;
@@ -30,11 +27,9 @@ const int PEAK_DETECTOR_BUFFER_LENGTH = 32;
 
 pa_simple *_pulseAudioClient;
 int _pulseAudioError;
-int _sampleSize;
 
-aubio_beattracking_t *_aubioBeatTracker;
-fvec_t *_aubioInput;
-fvec_t *_aubioOutput;
+int _sampleSize;
+PULSEAUDIO_SAMPLE_TYPE *_pulseAudioSamples;
 
 peakdetector_t *_peakDetector;
 
@@ -80,9 +75,13 @@ void cpulse_start(void) {
     _getRunningSink(sinkIndex);
     const char *audioDevice = &sinkIndex[0];
 
+    // initialize the sample buffer
+    _pulseAudioSamples = malloc(sizeof(PULSEAUDIO_SAMPLE_TYPE) * NUM_AUDIO_FRAMES);
+    _sampleSize = sizeof(PULSEAUDIO_SAMPLE_TYPE) * NUM_AUDIO_FRAMES;
+
     // make a pulseaudio connection
     printf("cpulse is connecting to pulseaudio sink %s... ", audioDevice);
-    const pa_sample_spec paSampleSpec = { PA_SAMPLE_FLOAT32LE, SAMPLE_RATE, NUM_CHANNELS };
+    const pa_sample_spec paSampleSpec = { PULSEAUDIO_SAMPLE_TYPE_CODE, SAMPLE_RATE, NUM_CHANNELS };
     if (!(_pulseAudioClient = pa_simple_new( NULL, "cpulse", PA_STREAM_RECORD, audioDevice, "cpulse",
                                              &paSampleSpec, NULL, NULL, &_pulseAudioError ))) {
         printf("cpulse couldn't connect to pulseaudio: %s\n", pa_strerror(_pulseAudioError));
@@ -91,31 +90,31 @@ void cpulse_start(void) {
         printf("connected.\n");
     }
 
-    // initialize an aubio beat tracker
-    _aubioBeatTracker = new_aubio_beattracking(NUM_AUDIO_FRAMES, NUM_CHANNELS);
-    _aubioInput = new_fvec(NUM_AUDIO_FRAMES, NUM_CHANNELS);
-    _aubioOutput =  new_fvec(NUM_AUDIO_FRAMES / 4, NUM_CHANNELS);
-    _sampleSize = sizeof(*fvec_get_data(_aubioInput)) * NUM_AUDIO_FRAMES / 2;
-
     // initialize a peak detector
     _peakDetector = new_peakdetector(PEAK_DETECTOR_BUFFER_LENGTH);
 
 }
 
 /*
- * Reads the latest audio data from pulseaudio, pulls it through
- * the aubio beat tracker, and returns a pointer to an int
- * indiciating whether the latest aubio value is a peak.
+ * Reads the latest audio data from pulseaudio and returns a pointer
+ * to an int indiciating whether the latest sample is a peak.
  */
 int * cpulse_pulse(void) {
 
-    if (pa_simple_read( _pulseAudioClient, *fvec_get_data(_aubioInput), _sampleSize, &_pulseAudioError ) < 0) {
+    // read the latest data from pulseaudio into _pulseAudioSamples
+    if (pa_simple_read( _pulseAudioClient, _pulseAudioSamples, _sampleSize, &_pulseAudioError ) < 0) {
         printf("cpulse error reading from pulseaudio: %s\n", pa_strerror(_pulseAudioError));
-    } else {
-        aubio_beattracking_do( _aubioBeatTracker, _aubioInput, _aubioOutput );
     }
 
-    return peakdetector_peak(_peakDetector, (int) *fvec_get_data(_aubioOutput)[0]);
+    // sum up _pulseAudioSamples
+    PULSEAUDIO_SAMPLE_TYPE sampleSum = 0;
+    int i;
+    for (i = 0; i < NUM_AUDIO_FRAMES; i++) {
+        sampleSum += _pulseAudioSamples[i];
+    }
+
+    // push that sum into the peak detector ring buffer and check whether it's a peak value
+    return peakdetector_peak(_peakDetector, sampleSum);
 
 }
 
@@ -125,9 +124,7 @@ int * cpulse_pulse(void) {
 void cpulse_stop(void) {
 
     pa_simple_free(_pulseAudioClient);
-    del_fvec(_aubioInput);
-    del_fvec(_aubioOutput);
-    del_aubio_beattracking(_aubioBeatTracker);
+    free(_pulseAudioSamples);
     del_peakdetector(_peakDetector);
     printf("cpulse successfully closed its pulseaudio connection.\n");
 

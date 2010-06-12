@@ -2,7 +2,7 @@
 
 rm cpulse.so
 rm `find -name cpulse.so`
-sudo apt-get install libpulse-dev aubio-tools libaubio-dev python-dev
+sudo apt-get install libpulse-dev python-dev
 
 set -e
 

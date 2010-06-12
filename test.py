@@ -6,4 +6,4 @@ if __name__ == "__main__":
     while 1:
         level += 1 if cpulse.pulse() else -2
         level = level if level >= 0 else 0
-        print "." * int(level/12)
+        #print "." * int(level/12)
