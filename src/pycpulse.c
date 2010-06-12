@@ -1,11 +1,20 @@
+/*
+  This is a Python extension module that wraps cpulse.  cpulse is started
+  when you import the module in Python and stopped when the module gets
+  garbage-collected.
+
+  As in cpulse.c, there is no threading.  You simply call cpulse.pulse()
+  continuously to get continuous beat tracking.
+*/
+
 #include <python2.6/Python.h>
 #include "cpulse.h"
 
-float *_pulses;
+float *_beats;
 
 static PyObject * pulse(PyObject *self, PyObject *args) {
-    _pulses = cpulse_pulse();
-    return Py_BuildValue("i", (int) _pulses[0] - 2);
+    _beats = cpulse_beats();
+    return Py_BuildValue("i", (int) _beats[0] - 2);
 }
 
 static PyMethodDef CPulseMethods[] = {
