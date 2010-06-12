@@ -3,20 +3,22 @@
 #include "peakdetector.h"
 
 /*
- * Gets a pointer to a new peakdetector.
+ * Returns a pointer to a new peakdetector.
  */
 peakdetector_t * new_peakdetector(int bufferLength) {
 
     peakdetector_t *pd = (peakdetector_t *) malloc(sizeof(peakdetector_t));
-    pd->buffer = malloc(sizeof(T) * bufferLength);
-    pd->bufferLength = bufferLength;
-    pd->pushIdx = 0;
-    pd->peakness = 0;
-    pd->normalizer = 0;
+    pd->_buffer = malloc(sizeof(T) * bufferLength);
+    pd->_bufferLength = bufferLength;
+    pd->_pushIdx = 0;
+    pd->_peakness = 0;
+
+    pd->isPeak = 0;
+    pd->isIncreasing = 0;
 
     int i;
-    for (i = 0; i < pd->bufferLength; i++) {
-        pd->buffer[i] = 0;
+    for (i = 0; i < pd->_bufferLength; i++) {
+        pd->_buffer[i] = 0;
     }
 
     return pd;
@@ -24,55 +26,45 @@ peakdetector_t * new_peakdetector(int bufferLength) {
 }
 
 /*
- * Takes in a new value, adds it to the ring buffer,
- * and returns a pointer to a float between -1 and 1
- * indicating how much of a peak this value is.
+ * Takes in a new value, adds it to the peakdetector's ring buffer,
+ * and updates the peakdetector's state variables (_peakness, isPeak,
+ * and isIncreasing) to reflect the peakness of the new value.
  */
-float * peakdetector_peak(peakdetector_t *pd, T latest) {
+void peakdetector_push(peakdetector_t *pd, T latest) {
 
     int i;
 
     // mean squares
     T localAverage = 0;
-    for (i = 0; i < pd->bufferLength; i++) {
-        localAverage += pow(pd->buffer[i], 2);
+    for (i = 0; i < pd->_bufferLength; i++) {
+        localAverage += pow(pd->_buffer[i], 2);
     }
-    localAverage /= pd->bufferLength;
+    localAverage /= pd->_bufferLength;
 
     // mean squared differences from the local average
     T localVariance = 0;
-    for (i = 0; i < pd->bufferLength; i++) {
-        localVariance += pow(localAverage - pd->buffer[i], 2);
+    for (i = 0; i < pd->_bufferLength; i++) {
+        localVariance += pow(localAverage - pd->_buffer[i], 2);
     }
-    localVariance /= pd->bufferLength;
+    localVariance /= pd->_bufferLength;
 
-    // calculate a prenormalized "peakness"
-    double valueToBeat = localAverage * (-0.0025714 * localVariance + 150);
-    double prenormalizedPeakness = latest - valueToBeat;
+    // temp save last peakness
+    T lastPeakness = pd->_peakness;
 
-    // increase the normalizer, if necessary
-    double absPrenormalizedPeakness = fabs(prenormalizedPeakness);
-    if (absPrenormalizedPeakness > pd->normalizer) {
-        pd->normalizer = absPrenormalizedPeakness;
-    }
+    // calculate new peakness
+    T valueToBeat = localAverage * (-0.0025714 * localVariance + 150);
+    pd->_peakness = latest - valueToBeat;
 
-    // normalize the peakness to between -1 and 1
-    pd->peakness = pd->normalizer == 0 ? 0 : prenormalizedPeakness / pd->normalizer;
+    // save values for the derived state variables
+    pd->isPeak = pd->_peakness > 0;
+    pd->isIncreasing = pd->_peakness > lastPeakness;
 
     // push the latest value into the ring buffer
-    pd->buffer[pd->pushIdx] = latest;
-    if ( ++pd->pushIdx == pd->bufferLength ) {
-        pd->pushIdx = 0;
+    // and cycle the ring pointer if necessary
+    pd->_buffer[pd->_pushIdx] = latest;
+    if ( ++pd->_pushIdx == pd->_bufferLength ) {
+        pd->_pushIdx = 0;
     }
-
-    /*
-    printf("avg: %f\n", localAverage);
-    printf("var: %f\n", localVariance);
-    printf("peakness: %f\n", pd->peakness);
-    printf("peak?: %i\n\n", pd->peakness > 0);
-    */
-
-    return &pd->peakness;
 
 }
 
@@ -81,7 +73,7 @@ float * peakdetector_peak(peakdetector_t *pd, T latest) {
  */
 void del_peakdetector(peakdetector_t *pd) {
 
-    free(pd->buffer);
+    free(pd->_buffer);
     free(pd);
 
 }

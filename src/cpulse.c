@@ -4,8 +4,10 @@
   whatever source, and does beat detection on it.
 
   cpulse_pulse() reads the latest data from pulseaudio and returns a pointer
-  to a float between -1 and 1 indicating how much of a peak the latest
-  sample is.
+  to a peak detector, with state variables:
+
+    isPeak (is the current sample a peak?)
+    isIncreasing (is the current sample more of a peak than the last?)
 
   There is no threading here.  You simply call cpulse_pulse() continuously
   to get continuous beat tracking.
@@ -98,10 +100,10 @@ void cpulse_start(void) {
 
 /*
  * Reads the latest audio data from pulseaudio and returns a pointer
- * to a float between -1 and 1 indiciating how much of a peak the
- * latest sample is.
+ * to a peak detector, whose state variables (isPeak and isIncreasing)
+ * indicate how much of a peak the latest sample is.
  */
-float * cpulse_pulse(void) {
+peakdetector_t * cpulse_pulse(void) {
 
     // read the latest data from pulseaudio into _pulseAudioSamples
     if (pa_simple_read( _pulseAudioClient, _pulseAudioSamples, _sampleSize, &_pulseAudioError ) < 0) {
@@ -115,8 +117,10 @@ float * cpulse_pulse(void) {
         sampleSum += _pulseAudioSamples[i];
     }
 
-    // push that sum into the peak detector ring buffer and check how much of a peak it is
-    return peakdetector_peak(_peakDetector, sampleSum);
+    // push that sum into the peak detector
+    peakdetector_push(_peakDetector, sampleSum);
+
+    return _peakDetector;
 
 }
 

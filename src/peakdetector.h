@@ -1,17 +1,22 @@
 #define T float
 
 /*
- * Holds onto a ring buffer and a flag indicating whether
- * the latest value is a peak.
+ * Holds onto a ring buffer and looks for peakness when you push in new values.
  */
 typedef struct {
-    T *buffer;
-    int bufferLength;
-    int pushIdx;
-    T peakness;
-    double normalizer;
+
+    // private
+    T *_buffer;
+    int _bufferLength;
+    int _pushIdx;
+    T _peakness;
+
+    // public
+    int isPeak;
+    int isIncreasing;
+
 } peakdetector_t;
 
 peakdetector_t * new_peakdetector(int bufferLength);
-float * peakdetector_peak(peakdetector_t *pd, T latest);
+void peakdetector_push(peakdetector_t *pd, T latest);
 void del_peakdetector(peakdetector_t *pd);

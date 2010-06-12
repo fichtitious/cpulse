@@ -1,3 +1,5 @@
+#include "peakdetector.h"
+
 void cpulse_start(void);
-float * cpulse_pulse(void);
+peakdetector_t * cpulse_pulse(void);
 void cpulse_stop(void);

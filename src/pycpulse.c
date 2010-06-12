@@ -3,8 +3,10 @@
   when you import the module in Python and stopped when the module gets
   garbage-collected.
 
-  cpulse.pulse() returns a number between -1 and 1 indicating how much
-  of a peak the latest sound coming through your speakers was.
+  In Python, cpulse.pulse() returns a tuple of:
+
+    a flag indicating whether the latest sound coming through your speakers was a peak
+    a flag indicating whether it was more of a peak than the last one
 
   As in cpulse.c, there is no threading.  You simply call cpulse.pulse()
   continuously to get continuous beat tracking.
@@ -13,15 +15,18 @@
 #include <python2.6/Python.h>
 #include "cpulse.h"
 
+peakdetector_t *_peakDetector;
+
 static PyObject * pulse(PyObject *self, PyObject *args) {
-    return Py_BuildValue("f", *cpulse_pulse());
+    _peakDetector = cpulse_pulse();
+    return Py_BuildValue( "(ii)", _peakDetector->isPeak, _peakDetector->isIncreasing );
 }
 
 static PyMethodDef CPulseMethods[] = {
-    {"pulse", pulse, METH_VARARGS, "returns a value between -1 and 1 "
-        "indicating how much of a peak the latest audio level going "
-        "out through your speakers was"},
-    {NULL,    NULL,  0,            NULL}
+    {"pulse", pulse, METH_VARARGS, "returns a flag indicating whether "
+        "the latest sound coming through your speakers was a peak and "
+        "a flag indicating whether it was more of a peak than the last"},
+    {NULL, NULL, 0, NULL} // sentinel
 };
 
 PyMODINIT_FUNC initcpulse(void) {
