@@ -1,11 +1,12 @@
 #!/bin/bash
 
 if [ -d "build" ]; then
-    sudo rm build -rf
+    rm build -rf
 fi
 
 sudo apt-get install libpulse-dev python-dev
 
 set -e
 
-sudo python setup/setup.py build install
+python setup/setup.py build
+sudo python setup/setup.py install

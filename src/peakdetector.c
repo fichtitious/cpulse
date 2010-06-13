@@ -52,12 +52,12 @@ void peakdetector_push(peakdetector_t *pd, T latest) {
     T lastPeakness = pd->_peakness;
 
     // calculate new peakness
-    T valueToBeat = localAverage * (-0.0002 * localVariance + 128.0);
+    T valueToBeat = localAverage * (-0.00008 * localVariance + 32.0);
     pd->_peakness = latest - valueToBeat;
 
     // save values for the derived state variables
     pd->isPeak = pd->_peakness > 0;
-    pd->isIncreasing = pd->_peakness - lastPeakness > 1000.0;
+    pd->isIncreasing = pd->_peakness - lastPeakness > 312.0;
 
     // push the latest value into the ring buffer
     // and cycle the ring pointer if necessary
