@@ -52,7 +52,7 @@ void peakdetector_push(peakdetector_t *pd, T latest) {
     T lastPeakness = pd->_peakness;
 
     // calculate new peakness
-    T valueToBeat = localAverage * (-0.0025714 * localVariance + 150);
+    T valueToBeat = localAverage * (-0.0002 * localVariance + 128.0);
     pd->_peakness = latest - valueToBeat;
 
     // save values for the derived state variables
