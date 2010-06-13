@@ -1,10 +1,11 @@
 #!/bin/bash
 
-rm cpulse.so
-rm `find -name cpulse.so`
+if [ -d "build" ]; then
+    sudo rm build -rf
+fi
+
 sudo apt-get install libpulse-dev python-dev
 
 set -e
 
-python build/setup.py build
-cp `find -name cpulse.so` .
+sudo python setup/setup.py build install
