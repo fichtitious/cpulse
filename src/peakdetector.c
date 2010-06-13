@@ -57,7 +57,7 @@ void peakdetector_push(peakdetector_t *pd, T latest) {
 
     // save values for the derived state variables
     pd->isPeak = pd->_peakness > 0;
-    pd->isIncreasing = pd->_peakness > lastPeakness;
+    pd->isIncreasing = pd->_peakness - lastPeakness > 1000.0;
 
     // push the latest value into the ring buffer
     // and cycle the ring pointer if necessary
