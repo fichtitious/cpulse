@@ -3,5 +3,6 @@ import cpulse
 if __name__ == "__main__":
 
     while 1:
-        isPeak, isIncreasing = cpulse.pulse()
-        print "%i %s" % (isPeak, "+" if isIncreasing else "")
+        bass, treble = cpulse.pulse()
+        print "%s %s" % ("+" if bass else " ", "+" if treble else " ")
+

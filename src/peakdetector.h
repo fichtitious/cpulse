@@ -1,19 +1,22 @@
 #define T float
 
 /*
- * Holds onto a ring buffer and looks for peakness when you push in new values.
+ * Holds onto a ring buffer and looks for peaks when you push in new samples.
  */
 typedef struct {
 
     // private
-    T *_buffer;
+    T *_samples;
+    T *_bassFiltered;
+    T *_trebleFiltered;
     int _bufferLength;
     int _pushIdx;
-    T _peakness;
+    T _bassPeak;
+    T _treblePeak;
 
     // public
-    int isPeak;
-    int isIncreasing;
+    int isBassPeak;
+    int isTreblePeak;
 
 } peakdetector_t;
 

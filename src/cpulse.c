@@ -6,8 +6,8 @@
   cpulse_pulse() reads the latest data from pulseaudio and returns a pointer
   to a peak detector, with state variables:
 
-    isPeak (is the current sample a peak?)
-    isIncreasing (is the current sample more of a peak than the last?)
+    isBassPeak
+    isTreblePeak
 
   There is no threading here.  You simply call cpulse_pulse() continuously
   to get continuous beat tracking.
@@ -23,10 +23,10 @@
 #define PULSEAUDIO_SAMPLE_TYPE float
 #define PULSEAUDIO_SAMPLE_TYPE_CODE PA_SAMPLE_FLOAT32LE
 
-const unsigned int NUM_AUDIO_FRAMES = 1024;
+const unsigned int NUM_AUDIO_FRAMES = 32;
 const uint8_t NUM_CHANNELS = 2;
 const uint32_t SAMPLE_RATE = 44100;
-const int PEAK_DETECTOR_BUFFER_LENGTH = 32;
+const int PEAK_DETECTOR_BUFFER_LENGTH = 2048;
 
 pa_simple *_pulseAudioClient;
 int _pulseAudioError;
@@ -100,8 +100,7 @@ void cpulse_start(void) {
 
 /*
  * Reads the latest audio data from pulseaudio and returns a pointer
- * to a peak detector, whose state variables (isPeak and isIncreasing)
- * indicate how much of a peak the latest sample is.
+ * to a peak detector with state variables isBassPeak and isTreblePeak.
  */
 peakdetector_t * cpulse_pulse(void) {
 
