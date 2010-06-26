@@ -4,7 +4,7 @@
   garbage-collected.
 
   In Python, cpulse.pulse() returns a tuple of flags indicating whether
-  there's a bass peak and whether there's a treble peak in the latest
+  there's a bass beat and whether there's a treble beat in the latest
   sound coming through your speakers, from whatever source.
 
   As in cpulse.c, there is no threading.  You simply call cpulse.pulse()
@@ -14,17 +14,16 @@
 #include <python2.6/Python.h>
 #include "cpulse.h"
 
-peakdetector_t *_peakDetector;
+beatdetector_t *_bd;
 
 static PyObject * pulse(PyObject *self, PyObject *args) {
-    _peakDetector = cpulse_pulse();
-    return Py_BuildValue( "(ii)", _peakDetector->isBassPeak, _peakDetector->isTreblePeak );
+    _bd = cpulse_pulse();
+    return Py_BuildValue( "(ii)", _bd->isBassBeat, _bd->isTrebleBeat );
 }
 
 static PyMethodDef CPulseMethods[] = {
-    {"pulse", pulse, METH_VARARGS, "returns flags indicating whether "
-        "the latest sound coming through your speakers was a bass "
-        "and/or treble peak"},
+    {"pulse", pulse, METH_VARARGS, "returns flags indicating whether the latest "
+        "sound coming through your speakers was a bass and/or treble beat"},
     {NULL, NULL, 0, NULL} // sentinel
 };
 

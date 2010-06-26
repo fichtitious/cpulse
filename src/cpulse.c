@@ -4,10 +4,10 @@
   whatever source, and does beat detection on it.
 
   cpulse_pulse() reads the latest data from pulseaudio and returns a pointer
-  to a peak detector, with state variables:
+  to a beat detector, with state variables:
 
-    isBassPeak
-    isTreblePeak
+    isBassBeat
+    isTrebleBeat
 
   There is no threading here.  You simply call cpulse_pulse() continuously
   to get continuous beat tracking.
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <pulse/error.h>
 #include <pulse/simple.h>
-#include "peakdetector.h"
+#include "beatdetector.h"
 
 #define PULSEAUDIO_SAMPLE_TYPE float
 #define PULSEAUDIO_SAMPLE_TYPE_CODE PA_SAMPLE_FLOAT32LE
@@ -26,7 +26,7 @@
 const unsigned int NUM_AUDIO_FRAMES = 32;
 const uint8_t NUM_CHANNELS = 2;
 const uint32_t SAMPLE_RATE = 44100;
-const int PEAK_DETECTOR_BUFFER_LENGTH = 2048;
+const int BEAT_DETECTOR_BUFFER_LENGTH = 4096;
 
 pa_simple *_pulseAudioClient;
 int _pulseAudioError;
@@ -34,7 +34,7 @@ int _pulseAudioError;
 int _sampleSize;
 PULSEAUDIO_SAMPLE_TYPE *_pulseAudioSamples;
 
-peakdetector_t *_peakDetector;
+beatdetector_t *_beatDetector;
 
 /*
  * Finds the index of your running pulseaudio output device.
@@ -93,16 +93,16 @@ void cpulse_start(void) {
         printf("connected.\n");
     }
 
-    // initialize a peak detector
-    _peakDetector = new_peakdetector(PEAK_DETECTOR_BUFFER_LENGTH);
+    // initialize a beat detector
+    _beatDetector = new_beatdetector(BEAT_DETECTOR_BUFFER_LENGTH);
 
 }
 
 /*
  * Reads the latest audio data from pulseaudio and returns a pointer
- * to a peak detector with state variables isBassPeak and isTreblePeak.
+ * to a beat detector with state variables isBassBeat and isTrebleBeat.
  */
-peakdetector_t * cpulse_pulse(void) {
+beatdetector_t * cpulse_pulse(void) {
 
     // read the latest data from pulseaudio into _pulseAudioSamples
     if (pa_simple_read( _pulseAudioClient, _pulseAudioSamples, _sampleSize, &_pulseAudioError ) < 0) {
@@ -116,10 +116,10 @@ peakdetector_t * cpulse_pulse(void) {
         sampleSum += _pulseAudioSamples[i];
     }
 
-    // push that sum into the peak detector
-    peakdetector_push(_peakDetector, sampleSum);
+    // push that sum into the beat detector
+    beatdetector_push(_beatDetector, sampleSum);
 
-    return _peakDetector;
+    return _beatDetector;
 
 }
 
@@ -130,7 +130,7 @@ void cpulse_stop(void) {
 
     pa_simple_free(_pulseAudioClient);
     free(_pulseAudioSamples);
-    del_peakdetector(_peakDetector);
+    del_beatdetector(_beatDetector);
     printf("cpulse successfully closed its pulseaudio connection.\n");
 
 }
