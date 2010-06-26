@@ -23,5 +23,5 @@ typedef struct {
 } beatdetector_t;
 
 beatdetector_t * new_beatdetector(int bufferLength);
-void beatdetector_push(beatdetector_t *pd, T latest);
-void del_beatdetector(beatdetector_t *pd);
+void beatdetector_push(beatdetector_t *bd, T latest);
+void del_beatdetector(beatdetector_t *bd);
