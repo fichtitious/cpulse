@@ -11,7 +11,7 @@ const T PEAK_CONSTANT = 2.4;
  */
 beatdetector_t * new_beatdetector(int bufferLength) {
 
-    beatdetector_t *bd = (beatdetector_t *) malloc(sizeof(beatdetector_t));
+    beatdetector_t *bd = malloc(sizeof(beatdetector_t));
 
     bd->_samples = malloc(sizeof(T) * bufferLength);
     bd->_bassFiltered = malloc(sizeof(T) * bufferLength);
@@ -31,7 +31,7 @@ beatdetector_t * new_beatdetector(int bufferLength) {
 }
 
 /*
- * Takes in a new sample, adds it to the beatdetector's ring buffer, and ubdates
+ * Takes in a new sample, adds it to the beatdetector's ring buffer, and updates
  * the beatdetector's state variables: isBassBeat and isTrebleBeat.
  */
 void beatdetector_push(beatdetector_t *bd, T sample) {
